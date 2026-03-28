@@ -61,14 +61,8 @@ async def process_events(events: list) -> None:
                 reply = full if full else "請先查詢一個產品，再回覆「詳細」。"
                 await loop.run_in_executor(None, push_message, user_id, reply)
             else:
-                analysis_task = asyncio.ensure_future(
-                    loop.run_in_executor(None, analyzer.analyze_product_name, text)
-                )
-                done, _ = await asyncio.wait([analysis_task], timeout=8.0)
-                if not done:
-                    # Still running — relevant product query doing web searches
-                    await loop.run_in_executor(None, push_message, user_id, f"⏳ 收到！正在查詢「{text}」的相關資訊，預計約 1 分鐘內完成。您可以先離開對話，結果會自動傳送給您 📩")
-                result = await analysis_task
+                await loop.run_in_executor(None, push_message, user_id, f"⏳ 收到！正在查詢「{text}」的相關資訊，預計約 1 分鐘內完成。您可以先離開對話，結果會自動傳送給您 📩")
+                result = await loop.run_in_executor(None, analyzer.analyze_product_name, text)
                 state.save_full_analysis(user_id, result["full"])
                 await loop.run_in_executor(None, push_message, user_id, result["brief"])
         # else: ignore stickers, video, etc.

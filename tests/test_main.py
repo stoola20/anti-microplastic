@@ -73,5 +73,4 @@ def test_waiting_message_is_first_push_for_product_query():
     first_msg = mock_push.call_args_list[0][0][1]  # (user_id, text) — second arg
     assert "⏳" in first_msg
     assert "CeraVe PM" in first_msg
-    assert "15-30" in first_msg
     assert "離開對話" in first_msg

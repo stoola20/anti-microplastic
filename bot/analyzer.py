@@ -95,6 +95,11 @@ def analyze_image(message_id: str) -> dict:
         )
         brief_text = _strip_markdown(_extract_text(response))
 
+        # Irrelevant image — return guidance without full analysis
+        if brief_text.startswith(NOT_RELEVANT_PREFIX):
+            cleaned = brief_text[len(NOT_RELEVANT_PREFIX):].strip()
+            return {"brief": cleaned, "full": cleaned}
+
         # Get full analysis
         full_response = anthropic_client.messages.create(
             model="claude-sonnet-4-6",
