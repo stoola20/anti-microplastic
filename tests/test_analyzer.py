@@ -79,7 +79,7 @@ def test_analyze_product_name_with_tool_call(mock_claude, mock_tavily):
 
 @patch("bot.analyzer.anthropic_client.messages.create")
 def test_analyze_product_name_max_rounds_fallback(mock_claude):
-    """Returns fallback message if loop exhausts MAX_ROUNDS."""
+    """Returns fallback message if loop exhausts MAX_ROUNDS and final call also fails."""
     tool_response = MagicMock()
     tool_response.stop_reason = "tool_use"
     tool_block = MagicMock()
@@ -88,8 +88,13 @@ def test_analyze_product_name_max_rounds_fallback(mock_claude):
     tool_block.input = {"query": "unknown product INCI"}
     tool_response.content = [tool_block]
 
+    # Final call (without tools) returns empty text → NOT_FOUND
+    final_response = MagicMock()
+    final_response.stop_reason = "end_turn"
+    final_response.content = []
+
     with patch("bot.analyzer.tavily_client.search", return_value={"results": []}):
-        mock_claude.return_value = tool_response
+        mock_claude.side_effect = [tool_response, tool_response, tool_response, final_response]
         result = analyze_product_name("未知產品XYZ")
     assert "抱歉" in result["brief"]
 

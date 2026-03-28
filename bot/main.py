@@ -3,6 +3,11 @@ import logging
 import os, json, hashlib, hmac, base64
 from dotenv import load_dotenv
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 import httpx

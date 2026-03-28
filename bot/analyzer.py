@@ -1,5 +1,6 @@
 import os
 import base64
+import logging
 import requests
 from io import BytesIO
 from PIL import Image
@@ -7,6 +8,8 @@ import anthropic
 import re
 from tavily import TavilyClient
 from bot.prompts import SYSTEM_PROMPT, NOT_RELEVANT_PREFIX
+
+logger = logging.getLogger(__name__)
 
 anthropic_client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
 tavily_client = TavilyClient(api_key=os.environ.get("TAVILY_API_KEY", ""))
@@ -78,9 +81,11 @@ def _extract_text(response) -> str:
 
 
 def analyze_image(message_id: str) -> dict:
+    logger.info("[image] start message_id=%s", message_id)
     try:
         image_bytes = _download_line_image(message_id)
         b64 = _resize_and_encode(image_bytes)
+        logger.info("[image] image downloaded and encoded, size=%d bytes", len(image_bytes))
 
         # Step 1: Generate FULL analysis from image
         full_response = anthropic_client.messages.create(
@@ -99,6 +104,7 @@ def analyze_image(message_id: str) -> dict:
 
         # Irrelevant image — return guidance without brief analysis
         if full_text.startswith(NOT_RELEVANT_PREFIX):
+            logger.info("[image] not_relevant message_id=%s", message_id)
             cleaned = full_text[len(NOT_RELEVANT_PREFIX):].strip()
             return {"brief": cleaned, "full": cleaned}
 
@@ -113,17 +119,20 @@ def analyze_image(message_id: str) -> dict:
             }]
         )
         brief_text = _strip_markdown(_extract_text(brief_response))
+        logger.info("[image] done message_id=%s brief=%s", message_id, brief_text[:200])
         return {"brief": brief_text, "full": full_text}
     except Exception:
+        logger.exception("[image] error message_id=%s", message_id)
         return {"brief": ERROR_BRIEF, "full": ERROR_FULL}
 
 
 def analyze_product_name(product_name: str) -> dict:
+    logger.info("[text] start product=%s", product_name)
     MAX_ROUNDS = 3
     messages = [{"role": "user", "content": f"請分析這個產品或物品的有害化學物質風險：{product_name}"}]
 
     brief_text = None
-    for _ in range(MAX_ROUNDS):
+    for round_num in range(1, MAX_ROUNDS + 1):
         response = anthropic_client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=1024,
@@ -134,14 +143,19 @@ def analyze_product_name(product_name: str) -> dict:
         if response.stop_reason == "end_turn":
             brief_response = response
             brief_text = _strip_markdown(_extract_text(brief_response))
+            logger.info("[text] end_turn at round %d/%d product=%s brief=%s", round_num, MAX_ROUNDS, product_name, brief_text[:200])
             break
         if response.stop_reason == "tool_use":
             tool_blocks = [b for b in response.content if b.type == "tool_use"]
             messages.append({"role": "assistant", "content": response.content})
             tool_results = []
             for tool_block in tool_blocks:
-                search_result = tavily_client.search(tool_block.input["query"])
-                result_text = "\n".join(r.get("content", "") for r in search_result.get("results", []))
+                query = tool_block.input["query"]
+                logger.info("[text] tavily search round=%d/%d query=%r product=%s", round_num, MAX_ROUNDS, query, product_name)
+                search_result = tavily_client.search(query)
+                results = search_result.get("results", [])
+                result_text = "\n".join(r.get("content", "") for r in results)
+                logger.info("[text] tavily results round=%d/%d count=%d chars=%d product=%s\n%s", round_num, MAX_ROUNDS, len(results), len(result_text), product_name, result_text[:500])
                 tool_results.append({
                     "type": "tool_result",
                     "tool_use_id": tool_block.id,
@@ -149,11 +163,30 @@ def analyze_product_name(product_name: str) -> dict:
                 })
             messages.append({"role": "user", "content": tool_results})
 
+    # All rounds used tool_use — make one final call without tools to force a text response
     if not brief_text:
+        logger.info("[text] forcing final response without tools product=%s", product_name)
+        # Tell Claude to output BRIEF format directly, not summarize search results first
+        messages[-1]["content"].append(
+            {"type": "text", "text": "搜尋完成，請直接用 OUTPUT=BRIEF 格式回覆分析結果。"}
+        )
+        response = anthropic_client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1024,
+            system=SYSTEM_PROMPT + "\nOUTPUT=BRIEF",
+            messages=messages,
+        )
+        brief_response = response
+        brief_text = _strip_markdown(_extract_text(brief_response))
+        logger.info("[text] final response product=%s brief=%s", product_name, brief_text[:200])
+
+    if not brief_text:
+        logger.warning("[text] not_found product=%s", product_name)
         return {"brief": NOT_FOUND_BRIEF, "full": NOT_FOUND_FULL}
 
     # Irrelevant input — return guidance without full analysis
     if brief_text.startswith(NOT_RELEVANT_PREFIX):
+        logger.info("[text] not_relevant product=%s", product_name)
         cleaned = brief_text[len(NOT_RELEVANT_PREFIX):].strip()
         return {"brief": cleaned, "full": cleaned}
 
@@ -168,4 +201,5 @@ def analyze_product_name(product_name: str) -> dict:
         messages=messages,
     )
     full_text = _strip_markdown(_extract_text(full_response))
+    logger.info("[text] done product=%s full=%s", product_name, full_text[:200])
     return {"brief": brief_text, "full": full_text or brief_text}
