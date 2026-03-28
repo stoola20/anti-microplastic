@@ -81,26 +81,8 @@ def analyze_image(message_id: str) -> dict:
     try:
         image_bytes = _download_line_image(message_id)
         b64 = _resize_and_encode(image_bytes)
-        response = anthropic_client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=1024,
-            system=SYSTEM_PROMPT + "\nOUTPUT=BRIEF",
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": b64}},
-                    {"type": "text", "text": "請分析這張圖片中的產品成分或容器材質，評估有害化學物質風險，用指定格式回覆。"}
-                ]
-            }]
-        )
-        brief_text = _strip_markdown(_extract_text(response))
 
-        # Irrelevant image — return guidance without full analysis
-        if brief_text.startswith(NOT_RELEVANT_PREFIX):
-            cleaned = brief_text[len(NOT_RELEVANT_PREFIX):].strip()
-            return {"brief": cleaned, "full": cleaned}
-
-        # Get full analysis
+        # Step 1: Generate FULL analysis from image
         full_response = anthropic_client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=2048,
@@ -114,6 +96,23 @@ def analyze_image(message_id: str) -> dict:
             }]
         )
         full_text = _strip_markdown(_extract_text(full_response))
+
+        # Irrelevant image — return guidance without brief analysis
+        if full_text.startswith(NOT_RELEVANT_PREFIX):
+            cleaned = full_text[len(NOT_RELEVANT_PREFIX):].strip()
+            return {"brief": cleaned, "full": cleaned}
+
+        # Step 2: Derive BRIEF from FULL (no image re-upload, saves image tokens)
+        brief_response = anthropic_client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1024,
+            system=SYSTEM_PROMPT + "\nOUTPUT=BRIEF",
+            messages=[{
+                "role": "user",
+                "content": f"以下是這個產品的完整分析：\n\n{full_text}\n\n請根據以上分析，用 OUTPUT=BRIEF 格式輸出簡短版本。"
+            }]
+        )
+        brief_text = _strip_markdown(_extract_text(brief_response))
         return {"brief": brief_text, "full": full_text}
     except Exception:
         return {"brief": ERROR_BRIEF, "full": ERROR_FULL}
