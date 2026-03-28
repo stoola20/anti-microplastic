@@ -128,6 +128,27 @@ def test_strip_markdown_no_op_on_clean_text():
 
 @patch("bot.analyzer.tavily_client.search")
 @patch("bot.analyzer.anthropic_client.messages.create")
+def test_analyze_product_name_irrelevant_input(mock_claude, mock_tavily):
+    """Irrelevant input returns guidance without Tavily search or full analysis."""
+    response = MagicMock()
+    response.stop_reason = "end_turn"
+    text_block = MagicMock()
+    text_block.type = "text"
+    text_block.text = "NOT_RELEVANT:\n嗨！我是日常用品安全分析助手 🔬\n\n我可以幫你檢查：\n📋 保養品、化妝品、清潔用品 — 是否含有干擾荷爾蒙的成分\n🍽️ 保鮮盒、紙杯、餐具、鍋具 — 是否會釋放有害物質到食物中\n\n直接告訴我產品名稱就好，例如「露得清洗面乳」或「PP保鮮盒」，也可以拍成分表照片給我！"
+    response.content = [text_block]
+    mock_claude.return_value = response
+
+    result = analyze_product_name("我漂亮嗎？")
+
+    assert "日常用品安全分析助手" in result["brief"]
+    assert "NOT_RELEVANT" not in result["brief"]
+    assert result["brief"] == result["full"]
+    mock_tavily.assert_not_called()
+    assert mock_claude.call_count == 1
+
+
+@patch("bot.analyzer.tavily_client.search")
+@patch("bot.analyzer.anthropic_client.messages.create")
 def test_full_analysis_populated_after_tool_call(mock_claude, mock_tavily):
     """Full analysis must be complete even when brief required a tool-use round."""
     # Round 1 (brief): tool_use
