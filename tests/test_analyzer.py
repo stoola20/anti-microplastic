@@ -149,6 +149,39 @@ def test_analyze_product_name_irrelevant_input(mock_claude, mock_tavily):
 
 @patch("bot.analyzer.tavily_client.search")
 @patch("bot.analyzer.anthropic_client.messages.create")
+def test_analyze_product_name_food_container(mock_claude, mock_tavily):
+    """Food container query returns container-specific analysis."""
+    brief_response = MagicMock()
+    brief_response.stop_reason = "end_turn"
+    brief_block = MagicMock()
+    brief_block.type = "text"
+    brief_block.text = (
+        "🟡 中風險 — PP保鮮盒\n\n"
+        "⚠️ 微塑膠 — 高溫使用時會釋放到食物中\n\n"
+        "💡 PP是相對安全的塑膠，但裝熱食時仍有微塑膠釋放風險\n"
+        "🛡️ 裝熱食建議改用玻璃或不鏽鋼容器，冷食使用則問題不大\n"
+        "回覆「詳細」查看完整說明。"
+    )
+    brief_response.content = [brief_block]
+
+    full_response = MagicMock()
+    full_response.stop_reason = "end_turn"
+    full_block = MagicMock()
+    full_block.type = "text"
+    full_block.text = "PP (聚丙烯) 是相對安全的塑膠材質..."
+    full_response.content = [full_block]
+
+    mock_claude.side_effect = [brief_response, full_response]
+
+    result = analyze_product_name("PP保鮮盒")
+    assert "PP保鮮盒" in result["brief"]
+    assert "🛡️" in result["brief"]
+    assert result["full"] is not None
+    mock_tavily.assert_not_called()
+
+
+@patch("bot.analyzer.tavily_client.search")
+@patch("bot.analyzer.anthropic_client.messages.create")
 def test_full_analysis_populated_after_tool_call(mock_claude, mock_tavily):
     """Full analysis must be complete even when brief required a tool-use round."""
     # Round 1 (brief): tool_use
