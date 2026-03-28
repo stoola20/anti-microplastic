@@ -6,7 +6,7 @@ from PIL import Image
 import anthropic
 import re
 from tavily import TavilyClient
-from bot.prompts import EDC_SYSTEM_PROMPT
+from bot.prompts import SYSTEM_PROMPT, NOT_RELEVANT_PREFIX
 
 anthropic_client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
 tavily_client = TavilyClient(api_key=os.environ.get("TAVILY_API_KEY", ""))
@@ -20,7 +20,7 @@ NOT_FOUND_FULL = NOT_FOUND_BRIEF
 
 SEARCH_TOOL = [{
     "name": "search_web",
-    "description": "搜尋個人護理產品的 INCI 成分表",
+    "description": "搜尋產品成分或食品容器材質資訊",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -84,12 +84,12 @@ def analyze_image(message_id: str) -> dict:
         response = anthropic_client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=1024,
-            system=EDC_SYSTEM_PROMPT + "\nOUTPUT=BRIEF",
+            system=SYSTEM_PROMPT + "\nOUTPUT=BRIEF",
             messages=[{
                 "role": "user",
                 "content": [
                     {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": b64}},
-                    {"type": "text", "text": "請分析這個成分表的 EDC 風險，用指定格式回覆。"}
+                    {"type": "text", "text": "請分析這張圖片中的產品成分或容器材質，評估有害化學物質風險，用指定格式回覆。"}
                 ]
             }]
         )
@@ -99,12 +99,12 @@ def analyze_image(message_id: str) -> dict:
         full_response = anthropic_client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=2048,
-            system=EDC_SYSTEM_PROMPT + "\nOUTPUT=FULL",
+            system=SYSTEM_PROMPT + "\nOUTPUT=FULL",
             messages=[{
                 "role": "user",
                 "content": [
                     {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": b64}},
-                    {"type": "text", "text": "請分析這個成分表的 EDC 風險，用指定格式回覆。"}
+                    {"type": "text", "text": "請分析這張圖片中的產品成分或容器材質，評估有害化學物質風險，用指定格式回覆。"}
                 ]
             }]
         )
@@ -116,14 +116,14 @@ def analyze_image(message_id: str) -> dict:
 
 def analyze_product_name(product_name: str) -> dict:
     MAX_ROUNDS = 3
-    messages = [{"role": "user", "content": f"請分析這個個人護理產品的 EDC 風險：{product_name}"}]
+    messages = [{"role": "user", "content": f"請分析這個產品或物品的有害化學物質風險：{product_name}"}]
 
     brief_text = None
     for _ in range(MAX_ROUNDS):
         response = anthropic_client.messages.create(
             model="claude-sonnet-4-6",
             max_tokens=1024,
-            system=EDC_SYSTEM_PROMPT + "\nOUTPUT=BRIEF",
+            system=SYSTEM_PROMPT + "\nOUTPUT=BRIEF",
             tools=SEARCH_TOOL,
             messages=messages,
         )
@@ -148,6 +148,11 @@ def analyze_product_name(product_name: str) -> dict:
     if not brief_text:
         return {"brief": NOT_FOUND_BRIEF, "full": NOT_FOUND_FULL}
 
+    # Irrelevant input — return guidance without full analysis
+    if brief_text.startswith(NOT_RELEVANT_PREFIX):
+        cleaned = brief_text[len(NOT_RELEVANT_PREFIX):].strip()
+        return {"brief": cleaned, "full": cleaned}
+
     # Reuse accumulated search context for full analysis (avoids redundant Tavily call).
     # Append assistant's end_turn response first to maintain role alternation.
     messages.append({"role": "assistant", "content": brief_response.content})
@@ -155,7 +160,7 @@ def analyze_product_name(product_name: str) -> dict:
     full_response = anthropic_client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=2048,
-        system=EDC_SYSTEM_PROMPT + "\nOUTPUT=FULL",
+        system=SYSTEM_PROMPT + "\nOUTPUT=FULL",
         messages=messages,
     )
     full_text = _strip_markdown(_extract_text(full_response))
