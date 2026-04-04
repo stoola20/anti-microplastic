@@ -83,17 +83,16 @@ def generate_image() -> str:
     draw.line([(HALF_W, 0), (HALF_W, HEIGHT)], fill=WHITE, width=3)
 
     # Circle parameters
-    circle_radius = 72
-    circle_y_center = HEIGHT // 2 - 60
+    circle_radius = 110
+    circle_y_center = HEIGHT // 2 - 80
 
     # Font sizes
-    font_icon = _find_font(56)
-    font_main = _find_font(52)
-    font_sub = _find_font(28)
+    font_icon = _find_font(128)
+    font_main = _find_font(120)
 
-    for cx, icon_char, main_text, sub_text in [
-        (HALF_W // 2, "?", "使用說明", "How to use"),
-        (HALF_W + HALF_W // 2, "i", "查看詳細", "View details"),
+    for cx, icon_char, main_text in [
+        (HALF_W // 2, "?", "使用說明"),
+        (HALF_W + HALF_W // 2, "i", "查看詳細"),
     ]:
         # Draw circle outline
         draw.ellipse(
@@ -109,18 +108,10 @@ def generate_image() -> str:
             icon_char, fill=WHITE, font=font_icon,
         )
         # Main text below circle
-        main_y = circle_y_center + circle_radius + 36
+        main_y = circle_y_center + circle_radius + 72
         bbox = draw.textbbox((0, 0), main_text, font=font_main)
         tw = bbox[2] - bbox[0]
         draw.text((cx - tw // 2, main_y), main_text, fill=WHITE, font=font_main)
-        # Sub text
-        sub_y = main_y + 70
-        bbox = draw.textbbox((0, 0), sub_text, font=font_sub)
-        tw = bbox[2] - bbox[0]
-        draw.text(
-            (cx - tw // 2, sub_y), sub_text,
-            fill=(220, 220, 220), font=font_sub,
-        )
 
     img.save(IMAGE_PATH, "PNG")
     print(f"Image saved to {IMAGE_PATH}")
@@ -184,7 +175,7 @@ def set_default(rich_menu_id: str) -> None:
     headers = {"Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}"}
     with httpx.Client(timeout=30) as client:
         resp = client.post(
-            f"https://api.line.me/v2/user/all/richmenu/{rich_menu_id}",
+            f"https://api.line.me/v2/bot/user/all/richmenu/{rich_menu_id}",
             headers=headers,
         )
         resp.raise_for_status()
