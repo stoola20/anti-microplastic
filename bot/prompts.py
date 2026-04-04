@@ -198,7 +198,7 @@ NOT_RELEVANT_PREFIX = "NOT_RELEVANT:"
 DETAIL_TRIGGERS = {"詳細", "詳細分析"}
 
 WELCOME_MESSAGE = """\
-歡迎加入「問勸一下」👋
+歡迎加入「問勳一下」👋
 
 保養品、洗髮精、水壺、便當盒、衣物……生活中到處藏著看不見的有害成分。不確定的時候，問一下就對了 🔍
 
