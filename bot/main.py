@@ -7,7 +7,7 @@ load_dotenv()
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 import httpx
-from bot.prompts import DETAIL_TRIGGERS, HELP_MESSAGE
+from bot.prompts import DETAIL_TRIGGERS, HELP_MESSAGE, WELCOME_MESSAGE
 from bot import state, analyzer
 
 LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET", "")
@@ -60,6 +60,10 @@ async def process_events(events: list) -> None:
     for event in events:
         user_id = event.get("source", {}).get("userId")
         if not user_id:
+            continue
+
+        if event.get("type") == "follow":
+            await loop.run_in_executor(None, push_message, user_id, WELCOME_MESSAGE)
             continue
 
         if event.get("type") == "postback":

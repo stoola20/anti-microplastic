@@ -25,8 +25,6 @@ HALF_W = WIDTH // 2
 # Colors
 GREEN_START = (67, 160, 71)    # #43A047
 GREEN_END = (46, 125, 50)      # #2E7D32
-BLUE_START = (30, 136, 229)    # #1E88E5
-BLUE_END = (21, 101, 192)      # #1565C0
 WHITE = (255, 255, 255)
 
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "..", "assets")
@@ -73,45 +71,40 @@ def generate_image() -> str:
     os.makedirs(ASSETS_DIR, exist_ok=True)
     img = Image.new("RGB", (WIDTH, HEIGHT))
 
-    # Draw gradient backgrounds
-    _draw_gradient(img, 0, 0, HALF_W, HEIGHT, GREEN_START, GREEN_END)
-    _draw_gradient(img, HALF_W, 0, WIDTH, HEIGHT, BLUE_START, BLUE_END)
+    # Draw full-width green gradient
+    _draw_gradient(img, 0, 0, WIDTH, HEIGHT, GREEN_START, GREEN_END)
 
     draw = ImageDraw.Draw(img)
-
-    # Divider line
-    draw.line([(HALF_W, 0), (HALF_W, HEIGHT)], fill=WHITE, width=3)
 
     # Circle parameters
     circle_radius = 110
     circle_y_center = HEIGHT // 2 - 80
+    cx = WIDTH // 2
 
     # Font sizes
     font_icon = _find_font(128)
     font_main = _find_font(120)
 
-    for cx, icon_char, main_text in [
-        (HALF_W // 2, "?", "使用說明"),
-        (HALF_W + HALF_W // 2, "i", "查看詳細"),
-    ]:
-        # Draw circle outline
-        draw.ellipse(
-            [cx - circle_radius, circle_y_center - circle_radius,
-             cx + circle_radius, circle_y_center + circle_radius],
-            outline=WHITE, width=4,
-        )
-        # Draw icon character centered in circle
-        bbox = draw.textbbox((0, 0), icon_char, font=font_icon)
-        tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-        draw.text(
-            (cx - tw // 2, circle_y_center - th // 2 - bbox[1]),
-            icon_char, fill=WHITE, font=font_icon,
-        )
-        # Main text below circle
-        main_y = circle_y_center + circle_radius + 72
-        bbox = draw.textbbox((0, 0), main_text, font=font_main)
-        tw = bbox[2] - bbox[0]
-        draw.text((cx - tw // 2, main_y), main_text, fill=WHITE, font=font_main)
+    # Draw circle outline
+    draw.ellipse(
+        [cx - circle_radius, circle_y_center - circle_radius,
+         cx + circle_radius, circle_y_center + circle_radius],
+        outline=WHITE, width=4,
+    )
+    # Draw icon character centered in circle
+    icon_char = "?"
+    bbox = draw.textbbox((0, 0), icon_char, font=font_icon)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    draw.text(
+        (cx - tw // 2, circle_y_center - th // 2 - bbox[1]),
+        icon_char, fill=WHITE, font=font_icon,
+    )
+    # Main text below circle
+    main_text = "使用說明"
+    main_y = circle_y_center + circle_radius + 72
+    bbox = draw.textbbox((0, 0), main_text, font=font_main)
+    tw = bbox[2] - bbox[0]
+    draw.text((cx - tw // 2, main_y), main_text, fill=WHITE, font=font_main)
 
     img.save(IMAGE_PATH, "PNG")
     print(f"Image saved to {IMAGE_PATH}")
@@ -131,12 +124,8 @@ def create_rich_menu() -> str:
         "chatBarText": "📋 功能選單",
         "areas": [
             {
-                "bounds": {"x": 0, "y": 0, "width": 1250, "height": 843},
+                "bounds": {"x": 0, "y": 0, "width": 2500, "height": 843},
                 "action": {"type": "postback", "data": "action=help", "displayText": "使用說明"},
-            },
-            {
-                "bounds": {"x": 1250, "y": 0, "width": 1250, "height": 843},
-                "action": {"type": "postback", "data": "action=detail", "displayText": "查看詳細"},
             },
         ],
     }
