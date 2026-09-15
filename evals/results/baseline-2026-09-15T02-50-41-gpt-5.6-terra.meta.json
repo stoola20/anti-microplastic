@@ -1,0 +1,24 @@
+{
+  "run_at_utc": "2026-09-15T02:58:34.982270+00:00",
+  "models_observed": [
+    "gpt-5.6-terra"
+  ],
+  "openai_sdk_version": "2.48.0",
+  "git_commit": "dec19f052c25797e0561ed3f8fb85336bbe96d01",
+  "cases_fingerprint": "7a76e59be29dedda4fa80639899bf44abf830c80051fc50489c7c49a67ce7ea2",
+  "cases_run": [
+    "A1",
+    "A2",
+    "A3",
+    "B1",
+    "B2",
+    "B3",
+    "C1",
+    "C2",
+    "D1",
+    "D2"
+  ],
+  "cases_skipped": [],
+  "n_runs": 3,
+  "pricing_note": "estimated_cost_usd 目前一律為 null——PRICING_PER_MTOK_OPENAI 尚未填入官方即時價格，使用前請至 https://openai.com/api/pricing 確認，不要用記憶中的舊數字。"
+}

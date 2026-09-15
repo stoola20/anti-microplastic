@@ -8,7 +8,12 @@ from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 import httpx
 from bot.prompts import DETAIL_TRIGGERS, HELP_MESSAGE, WELCOME_MESSAGE
-from bot import state, analyzer
+
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "anthropic")
+if LLM_PROVIDER == "openai":
+    from bot import analyzer_openai as analyzer, state_openai as state
+else:
+    from bot import state, analyzer
 
 LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET", "")
 LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
