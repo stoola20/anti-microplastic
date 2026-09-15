@@ -84,7 +84,7 @@ def analyze_image(message_id: str) -> dict:
 
         # Step 1: Generate FULL analysis from image
         full_response = anthropic_client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=2048,
             system=SYSTEM_PROMPT + "\nOUTPUT=FULL",
             messages=[{
@@ -104,7 +104,7 @@ def analyze_image(message_id: str) -> dict:
 
         # Step 2: Derive BRIEF from FULL (no image re-upload, saves image tokens)
         brief_response = anthropic_client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=1024,
             system=SYSTEM_PROMPT + "\nOUTPUT=BRIEF",
             messages=[{
@@ -125,7 +125,7 @@ def analyze_product_name(product_name: str) -> dict:
     brief_text = None
     for _ in range(MAX_ROUNDS):
         response = anthropic_client.messages.create(
-            model="claude-sonnet-4-6",
+            model="claude-sonnet-5",
             max_tokens=1024,
             system=SYSTEM_PROMPT + "\nOUTPUT=BRIEF",
             tools=SEARCH_TOOL,
@@ -162,7 +162,7 @@ def analyze_product_name(product_name: str) -> dict:
     messages.append({"role": "assistant", "content": brief_response.content})
     messages.append({"role": "user", "content": "請輸出完整分析（OUTPUT=FULL）。"})
     full_response = anthropic_client.messages.create(
-        model="claude-sonnet-4-6",
+        model="claude-sonnet-5",
         max_tokens=2048,
         system=SYSTEM_PROMPT + "\nOUTPUT=FULL",
         messages=messages,

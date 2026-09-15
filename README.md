@@ -29,7 +29,7 @@ Four modules in `bot/`:
 
 ```
 LINE → /webhook → download image → resize (Pillow, 1600px max)
-→ base64 encode → Claude Vision (claude-sonnet-4-6)
+→ base64 encode → Claude Vision (claude-sonnet-5)
 → { brief, full } → LINE Push API
 ```
 
@@ -37,7 +37,7 @@ LINE → /webhook → download image → resize (Pillow, 1600px max)
 
 ```
 LINE → /webhook → Tavily search (tool-use, ≤3 rounds)
-→ Claude analysis (claude-sonnet-4-6)
+→ Claude analysis (claude-sonnet-5)
 → { brief, full } → LINE Push API
 ```
 
@@ -122,7 +122,7 @@ Health check endpoint: `GET /health`.
 
 ```
 LINE → /webhook → 下載圖片 → 縮放（Pillow，最大 1600px）
-→ Base64 編碼 → Claude Vision（claude-sonnet-4-6）
+→ Base64 編碼 → Claude Vision（claude-sonnet-5）
 → { brief, full } → LINE Push API
 ```
 
@@ -130,7 +130,7 @@ LINE → /webhook → 下載圖片 → 縮放（Pillow，最大 1600px）
 
 ```
 LINE → /webhook → Tavily 搜尋（工具呼叫，最多 3 輪）
-→ Claude 分析（claude-sonnet-4-6）
+→ Claude 分析（claude-sonnet-5）
 → { brief, full } → LINE Push API
 ```
 

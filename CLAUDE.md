@@ -44,7 +44,7 @@ Four modules in `bot/`:
 
 ## Key Design Decisions
 
-- Uses Claude `claude-sonnet-4-6` for both vision and text analysis
+- Uses Claude `claude-sonnet-5` for both vision and text analysis
 - Two-tier output: BRIEF (quick checklist) sent immediately, FULL stored and retrieved via "詳細" trigger
 - `OUTPUT=BRIEF` / `OUTPUT=FULL` appended to system prompt to control response format
 - Prompt explicitly forbids Markdown output (LINE renders plain text only)
