@@ -1,0 +1,24 @@
+{
+  "run_at_utc": "2026-09-15T01:30:42.945515+00:00",
+  "models_observed": [
+    "claude-sonnet-5"
+  ],
+  "anthropic_sdk_version": "0.86.0",
+  "git_commit": "4693fb607fa8cfb5626db00cf31b62383cbe87f8",
+  "cases_fingerprint": "412c2d279b73d41335da6fe75a2f8c0b27a64a72c7d82ad933bfb96bbdbc2f7d",
+  "cases_run": [
+    "A1",
+    "A2",
+    "A3",
+    "B1",
+    "B2",
+    "B3",
+    "C1",
+    "C2",
+    "D1",
+    "D2"
+  ],
+  "cases_skipped": [],
+  "n_runs": 3,
+  "pricing_note": "estimated_cost_usd 目前一律為 null——PRICING_PER_MTOK 尚未填入官方即時價格，使用前請至 https://www.anthropic.com/pricing 確認，不要用記憶中的舊數字。"
+}
