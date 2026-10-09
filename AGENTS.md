@@ -1,10 +1,9 @@
-# CLAUDE.md
+# AGENTS.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Git 規範
-- 不要自動執行 git commit
-- 需要 commit 時，列出準備 commit 的檔案和建議的 commit message，等我確認後再執行
+- 可自行提交本次任務的相關修改；commit message 使用繁體中文。
 
 ## Project Overview
 
@@ -56,4 +55,4 @@ Required (see `.env.example`): `LINE_CHANNEL_SECRET`, `LINE_CHANNEL_ACCESS_TOKEN
 
 ## Language
 
-All user-facing text and prompts are in Traditional Chinese (繁體中文). Code comments and variable names are in English.
+All user-facing text and prompts are in Traditional Chinese (繁體中文). 程式碼註解與 commit message 使用繁體中文；變數、函式與型別名稱使用英文。
